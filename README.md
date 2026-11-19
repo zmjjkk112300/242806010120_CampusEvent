@@ -6,7 +6,7 @@
 - 姓名：张皓南　学号：242806010120　班级：计算机科学与技术 2024 级
 - 技术栈：Python 3.11+ / Flask 3.1 / SQLAlchemy 2.x / SQLite / pytest
 - 代码仓库：<https://github.com/zmjjkk112300/242806010120_CampusEvent>
-- 在线访问：<https://8b8efcd3735b1a.app.lhr.life>（演示用公网隧道地址，重连可能变化；正式部署见第四节）
+- 在线访问：<http://47.106.160.76:8000>（正式部署地址，systemd 托管、开机自启）
 
 ## 一、快速开始（本地）
 
@@ -57,12 +57,11 @@ bash deploy/deploy.sh 8000
 
 部署记录见 `deploy/DEPLOY.md`，要点如下。
 
-- 已部署主机：课程云主机（Linux，Python 3.12.11），代码位于
-  `/home/user/Doubao/chats/38454965453800706/CampusEvent`，
-  `gunicorn -w 2 -b 0.0.0.0:8000` 后台运行；本机 `GET /login` 返回 200，服务器上 `pytest` 23 passed。
-- 公网访问：该主机安全组/网关未对外放行 8000 端口（实测 80、443、8000、8080 均不可达），
-  因此暂无可供外部浏览器打开的公网地址；迁移到具备公网端口的服务器后执行同一脚本并在安全组放行端口即可。
-- 生产化：`deploy/campus-event.service` 提供 systemd 托管模板（参考 `deploy/DEPLOY.md`）。
+- 已部署主机：阿里云轻量应用服务器（Ubuntu 24.04，公网 IP `47.106.160.76`），代码位于
+  `/opt/campus-event`；`gunicorn -w 2 -b 0.0.0.0:8000 run:app` 由 systemd 单元
+  `campus-event.service` 托管并设置开机自启，服务器上 `pytest` 23 passed。
+- 公网访问：<http://47.106.160.76:8000>，已从外部网络实测返回 HTTP 200，浏览器可直接打开。
+- 生产化：`deploy/campus-event.service` 即该机实际使用的 systemd 单元，详见 `deploy/DEPLOY.md`。
 
 ## 五、配置项（环境变量）
 
