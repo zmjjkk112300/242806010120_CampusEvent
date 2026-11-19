@@ -1,0 +1,47 @@
+@startuml ApprovalSequence
+skinparam dpi 150
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #0F6B5C
+  ActorBorderColor #0F6B5C
+  LifeLineBorderColor #9CA3AF
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #0F6B5C
+}
+autonumber
+
+actor "管理员" as A
+participant "AdminRoutes\n/reviews" as R
+participant "RegistrationService" as SVC
+participant "RegistrationRepository" as REPO
+participant "ActivityRepository" as AREPO
+database "SQLite" as DB
+participant "DomainEventBus" as BUS
+participant "InAppNotificationObserver" as OBS
+
+A -> R : 点击“批准”
+R -> SVC : approve(registration_id)
+SVC -> REPO : 读取报名记录
+REPO --> SVC : status = 待审核
+SVC -> SVC : 校验状态为待审核
+SVC -> AREPO : 读取活动（capacity）
+SVC -> REPO : 统计已通过人数
+REPO --> SVC : approved_count
+
+alt approved_count >= capacity
+  SVC --> R : raise CapacityExceeded
+  R --> A : 提示“名额已满，无法批准”
+else 名额充足
+  SVC -> DB : UPDATE status = 已通过（事务提交）
+  SVC -> BUS : publish(registration.approved)
+  BUS -> OBS : handle(event)
+  OBS -> DB : 写入站内消息（幂等键）
+  SVC --> R : Registration
+  R --> A : 提示“已批准该报名”
+end
+
+note over SVC
+  待审核阶段不占用名额，
+  因此容量必须在批准时再次校验
+end note
+@enduml

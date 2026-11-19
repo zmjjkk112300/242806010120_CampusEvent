@@ -1,0 +1,50 @@
+@startuml RegistrationSequence
+skinparam dpi 150
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #0F6B5C
+  ActorBorderColor #0F6B5C
+  LifeLineBorderColor #9CA3AF
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #0F6B5C
+}
+autonumber
+
+actor "学生" as S
+participant "StudentRoutes\n/activities/{id}/register" as R
+participant "RegistrationService" as SVC
+participant "PolicyRegistry" as REG
+participant "RegistrationPolicy\n(direct / approval)" as POL
+participant "RegistrationRepository" as REPO
+database "SQLite" as DB
+participant "DomainEventBus" as BUS
+participant "InAppNotificationObserver" as OBS
+participant "Message 表" as MSG
+
+S -> R : POST 报名请求(activity_id)
+R -> SVC : register(activity_id, student_id)
+SVC -> REPO : 查询该生活动有效报名
+REPO --> SVC : 无有效报名
+SVC -> SVC : 校验活动存在且未开始
+SVC -> REG : get(activity.policy_type)
+REG --> SVC : policy 实例
+SVC -> REPO : 统计已通过人数
+REPO --> SVC : approved_count
+
+alt policy.occupies_capacity_on_submit = true（直接报名）
+  SVC -> SVC : 校验 approved_count < capacity
+  SVC -> POL : decide(context)
+  POL --> SVC : 已通过 + registration.approved
+else 审核型报名（提交不占名额）
+  SVC -> POL : decide(context)
+  POL --> SVC : 待审核 + registration.submitted
+end
+
+SVC -> DB : INSERT registrations（事务提交）
+SVC -> BUS : publish(RegistrationEvent)
+BUS -> OBS : handle(event)
+OBS -> MSG : 幂等检查 event_key 后写入
+OBS --> BUS : 通知完成（失败则留痕）
+SVC --> R : Registration
+R --> S : 重定向并提示“报名成功/待审核”
+@enduml

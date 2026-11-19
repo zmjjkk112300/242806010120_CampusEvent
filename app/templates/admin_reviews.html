@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}报名审核 · CampusEvent{% endblock %}
+{% block content %}
+<h1>报名审核</h1>
+<p class="meta">待审核报名不占用名额；批准时系统会再次检查剩余名额。</p>
+{% if rows %}
+<table>
+  <tr><th>报名编号</th><th>活动</th><th>学生</th><th>提交时间</th><th>操作</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>#{{ r.registration_id }}</td>
+    <td>{{ r.activity.title }}</td>
+    <td>{{ r.student.name }}（{{ r.student_id }}）</td>
+    <td class="meta">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>
+      <form method="post" action="{{ url_for('admin.approve', registration_id=r.registration_id) }}" class="inline">
+        <button type="submit">批准</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.reject', registration_id=r.registration_id) }}" class="inline">
+        <button class="danger" type="submit">拒绝</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="empty">当前没有待审核的报名</div>
+{% endif %}
+{% endblock %}

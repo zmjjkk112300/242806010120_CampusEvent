@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}活动管理 · CampusEvent{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1>活动管理</h1>
+  <a class="btn" href="{{ url_for('admin.activity_new') }}">新建活动</a>
+</div>
+{% if rows %}
+<table>
+  <tr><th>活动名称</th><th>开始时间</th><th>报名方式</th><th>已通过/上限</th><th>待审核</th><th>剩余</th><th>操作</th></tr>
+  {% for row in rows %}
+  <tr>
+    <td>{{ row.activity.title }}</td>
+    <td>{{ row.activity.start_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td><span class="tag">{{ row.activity.policy_label }}</span></td>
+    <td>{{ row.stats.approved }} / {{ row.stats.capacity }}</td>
+    <td>{{ row.stats.pending }}</td>
+    <td>{{ row.stats.remaining }}</td>
+    <td>
+      <a class="btn ghost" href="{{ url_for('admin.activity_edit', activity_id=row.activity.activity_id) }}">编辑</a>
+      <form method="post" action="{{ url_for('admin.activity_delete', activity_id=row.activity.activity_id) }}" class="inline"
+            onsubmit="return confirm('确认删除该活动？');">
+        <button class="danger" type="submit">删除</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="empty">还没有活动，点击右上角新建</div>
+{% endif %}
+{% endblock %}

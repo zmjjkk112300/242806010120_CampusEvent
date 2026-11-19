@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑活动' if activity else '新建活动' }} · CampusEvent{% endblock %}
+{% block content %}
+<h1>{{ '编辑活动' if activity else '新建活动' }}</h1>
+<form method="post" class="card">
+  <div class="field">
+    <label for="title">活动名称</label>
+    <input id="title" name="title" required maxlength="120" value="{{ activity.title if activity else '' }}">
+  </div>
+  <div class="field">
+    <label for="category">活动分类</label>
+    <input id="category" name="category" maxlength="60" value="{{ activity.category if activity else '' }}" placeholder="如 学术竞赛 / 文体活动">
+  </div>
+  <div class="field">
+    <label for="start_at">开始时间</label>
+    <input id="start_at" name="start_at" type="datetime-local" required value="{{ default_start }}">
+  </div>
+  <div class="field">
+    <label for="location">活动地点</label>
+    <input id="location" name="location" maxlength="120" value="{{ activity.location if activity else '' }}">
+  </div>
+  <div class="field">
+    <label for="capacity">人数上限</label>
+    <input id="capacity" name="capacity" type="number" min="1" max="1000" required value="{{ activity.capacity if activity else 10 }}">
+  </div>
+  <div class="field">
+    <label for="policy_type">报名方式</label>
+    <select id="policy_type" name="policy_type">
+      {% for policy in policies %}
+      <option value="{{ policy.policy_type.value }}" {% if activity and activity.policy_type == policy.policy_type.value %}selected{% endif %}>{{ policy.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit">保存</button>
+  <a class="btn ghost" href="{{ url_for('admin.activities') }}">返回</a>
+</form>
+{% endblock %}

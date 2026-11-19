@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}我的报名 · CampusEvent{% endblock %}
+{% block content %}
+<h1>我的报名</h1>
+{% if rows %}
+<table>
+  <tr><th>报名编号</th><th>活动</th><th>活动时间</th><th>状态</th><th>提交时间</th><th>操作</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>#{{ r.registration_id }}</td>
+    <td><a href="{{ url_for('student.activity_detail', activity_id=r.activity.activity_id) }}">{{ r.activity.title }}</a></td>
+    <td>{{ r.activity.start_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>
+      <span class="tag{% if r.status == '待审核' %} tag-warn{% elif r.status == '已拒绝' %} tag-danger{% elif r.status == '已取消' %} tag-muted{% endif %}">{{ r.status }}</span>
+    </td>
+    <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>
+      {% if r.status in ['待审核', '已通过'] %}
+      <form method="post" action="{{ url_for('student.cancel', registration_id=r.registration_id) }}" class="inline">
+        <button class="danger" type="submit">取消</button>
+      </form>
+      {% else %}
+        <span class="meta">不可操作</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="empty">你还没有任何报名记录</div>
+{% endif %}
+{% endblock %}

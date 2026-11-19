@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}活动列表 · CampusEvent{% endblock %}
+{% block content %}
+<h1>活动列表</h1>
+<form method="get" action="{{ url_for('student.activities') }}" class="card" style="display:flex;gap:12px;align-items:flex-end">
+  <div class="field" style="flex:1;margin:0">
+    <label for="q">按活动名称筛选</label>
+    <input id="q" name="q" value="{{ keyword }}" placeholder="输入名称关键词">
+  </div>
+  <button type="submit">筛选</button>
+  {% if keyword %}<a class="btn ghost" href="{{ url_for('student.activities') }}">清除</a>{% endif %}
+</form>
+
+{% if rows %}
+<table>
+  <tr>
+    <th>活动名称</th><th>分类</th><th>开始时间</th><th>地点</th><th>报名方式</th><th>已通过/上限</th><th>剩余名额</th><th>操作</th>
+  </tr>
+  {% for row in rows %}
+  <tr>
+    <td><a href="{{ url_for('student.activity_detail', activity_id=row.activity.activity_id) }}">{{ row.activity.title }}</a></td>
+    <td>{{ row.activity.category }}</td>
+    <td>{{ row.activity.start_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>{{ row.activity.location }}</td>
+    <td><span class="tag">{{ row.activity.policy_label }}</span></td>
+    <td>{{ row.stats.approved }} / {{ row.stats.capacity }}</td>
+    <td>
+      {% if row.stats.remaining > 0 %}{{ row.stats.remaining }}{% else %}<span class="tag tag-danger">已满</span>{% endif %}
+    </td>
+    <td>
+      {% if row.mine and row.mine.status in ['待审核', '已通过'] %}
+        <span class="tag{% if row.mine.status == '待审核' %} tag-warn{% endif %}">我的状态：{{ row.mine.status }}</span>
+      {% else %}
+        <a class="btn ghost" href="{{ url_for('student.activity_detail', activity_id=row.activity.activity_id) }}">查看详情</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="empty">暂无符合条件的活动</div>
+{% endif %}
+{% endblock %}

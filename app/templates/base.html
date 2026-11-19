@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}校园活动报名与管理系统{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">CampusEvent · 校园活动报名与管理</div>
+  <nav>
+    {% if session.get('is_admin') %}
+      <a href="{{ url_for('admin.activities') }}">活动管理</a>
+      <a href="{{ url_for('admin.reviews') }}">报名审核</a>
+    {% else %}
+      <a href="{{ url_for('student.activities') }}">活动列表</a>
+      {% if session.get('student_id') %}
+        <a href="{{ url_for('student.my_registrations') }}">我的报名</a>
+        <a href="{{ url_for('student.messages') }}">站内消息</a>
+      {% endif %}
+    {% endif %}
+    {% if session.get('student_id') %}
+      <span class="who">{{ session.get('student_name') }}</span>
+      <a class="link-quiet" href="{{ url_for('student.logout') }}">退出</a>
+    {% elif session.get('is_admin') %}
+      <span class="who">管理员</span>
+      <a class="link-quiet" href="{{ url_for('student.logout') }}">退出</a>
+    {% else %}
+      <a class="link-quiet" href="{{ url_for('student.login') }}">登录</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer>软件工程课程实践 · 实验二 CampusEvent（baseline-v1）</footer>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · CampusEvent{% endblock %}
+{% block content %}
+<div class="empty">
+  <h1>{{ code }}</h1>
+  <p>{{ message }}</p>
+  <p><a href="{{ url_for('student.activities') }}">返回首页</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}登录 · CampusEvent{% endblock %}
+{% block content %}
+<h1>登录</h1>
+<div class="grid-2">
+  <div class="card">
+    <h2>学生登录</h2>
+    <p class="meta">演示账号（无需注册）：</p>
+    <form method="post" action="{{ url_for('student.login_student') }}">
+      <div class="field">
+        <label for="student_id">学生 ID</label>
+        <input id="student_id" name="student_id" list="student-options" placeholder="如 S001" required>
+        <datalist id="student-options">
+          {% for s in students %}<option value="{{ s.student_id }}">{{ s.name }}</option>{% endfor %}
+        </datalist>
+      </div>
+      <button type="submit">以学生身份进入</button>
+    </form>
+    <table style="margin-top:14px">
+      <tr><th>学生 ID</th><th>姓名</th></tr>
+      {% for s in students %}<tr><td>{{ s.student_id }}</td><td>{{ s.name }}</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>管理员登录</h2>
+    <form method="post" action="{{ url_for('student.login_admin') }}">
+      <div class="field">
+        <label for="password">管理员密码</label>
+        <input id="password" name="password" type="password" placeholder="admin123" required>
+      </div>
+      <button type="submit">以管理员身份进入</button>
+    </form>
+    <p class="meta" style="margin-top:14px">管理员可创建、编辑、删除活动，并处理待审核报名。</p>
+  </div>
+</div>
+{% endblock %}

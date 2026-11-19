@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ activity.title }} · CampusEvent{% endblock %}
+{% block content %}
+<h1>{{ activity.title }}</h1>
+<div class="card">
+  <table>
+    <tr><th style="width:140px">分类</th><td>{{ activity.category }}</td></tr>
+    <tr><th>开始时间</th><td>{{ activity.start_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+    <tr><th>地点</th><td>{{ activity.location }}</td></tr>
+    <tr><th>报名方式</th><td><span class="tag">{{ activity.policy_label }}</span></td></tr>
+    <tr><th>人数上限</th><td>{{ stats.capacity }}</td></tr>
+    <tr><th>已通过</th><td>{{ stats.approved }}</td></tr>
+    <tr><th>待审核</th><td>{{ stats.pending }}</td></tr>
+    <tr><th>剩余名额</th><td>{{ stats.remaining }}</td></tr>
+  </table>
+</div>
+
+{% if mine %}
+<div class="card">
+  <h2 style="margin-top:0">我的报名</h2>
+  <p>报名编号 #{{ mine.registration_id }}，状态：
+    <span class="tag{% if mine.status == '待审核' %} tag-warn{% elif mine.status == '已拒绝' or mine.status == '已取消' %} tag-muted{% endif %}">{{ mine.status }}</span>
+  </p>
+  <p class="meta">提交时间：{{ mine.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  {% if mine.status in ['待审核', '已通过'] %}
+  <form method="post" action="{{ url_for('student.cancel', registration_id=mine.registration_id) }}" class="inline">
+    <button class="danger" type="submit">取消报名</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if session.get('student_id') %}
+  {% if not mine or mine.status in ['已拒绝', '已取消'] %}
+  <form method="post" action="{{ url_for('student.register', activity_id=activity.activity_id) }}" class="card">
+    {% if stats.remaining <= 0 and activity.policy_type == 'direct' %}
+      <p class="meta">名额已满，直接报名将失败；审核型活动仍可提交申请，但批准时会再次校验名额。</p>
+      <button type="submit" disabled>名额已满</button>
+    {% else %}
+      <button type="submit">立即报名</button>
+    {% endif %}
+  </form>
+  {% endif %}
+{% else %}
+<div class="card meta">请先登录后再报名。</div>
+{% endif %}
+
+<p><a href="{{ url_for('student.activities') }}">← 返回活动列表</a></p>
+{% endblock %}
