@@ -6,7 +6,7 @@
 - 姓名：张皓南　学号：242806010120　班级：计算机科学与技术 2024 级
 - 技术栈：Python 3.11+ / Flask 3.1 / SQLAlchemy 2.x / SQLite / pytest
 - 代码仓库：<https://github.com/zmjjkk112300/242806010120_CampusEvent>
-- 在线访问：<https://7af4df5b2ef9f4.app.lhr.life>（演示用公网地址，部署方式见第四节）
+- 在线访问：<https://8b8efcd3735b1a.app.lhr.life>（演示用公网隧道地址，重连可能变化；正式部署见第四节）
 
 ## 一、快速开始（本地）
 
