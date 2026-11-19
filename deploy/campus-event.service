@@ -1,0 +1,15 @@
+[Unit]
+Description=CampusEvent Flask Application (gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/CampusEvent
+EnvironmentFile=/opt/CampusEvent/.env
+ExecStart=/opt/CampusEvent/.venv/bin/gunicorn -w 2 -b 0.0.0.0:8000 run:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

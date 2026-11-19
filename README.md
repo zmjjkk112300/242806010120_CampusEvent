@@ -49,14 +49,18 @@ pytest -v
 ## 四、云服务器部署
 
 ```bash
-# 服务器上（Linux）
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-export CAMPUS_EVENT_SECRET=<自定义密钥>
-gunicorn -w 2 -b 0.0.0.0:8000 run:app
+# 服务器上（Linux）一键部署：建 venv、装依赖、跑测试、后台启动 gunicorn
+bash deploy/deploy.sh 8000
 ```
 
-访问地址：`http://<服务器公网IP>:8000`（本项目实际部署地址见提交说明与实验报告）。
+部署记录见 `deploy/DEPLOY.md`，要点如下。
+
+- 已部署主机：课程云主机（Linux，Python 3.12.11），代码位于
+  `/home/user/Doubao/chats/38454965453800706/CampusEvent`，
+  `gunicorn -w 2 -b 0.0.0.0:8000` 后台运行；本机 `GET /login` 返回 200，服务器上 `pytest` 23 passed。
+- 公网访问：该主机安全组/网关未对外放行 8000 端口（实测 80、443、8000、8080 均不可达），
+  因此暂无可供外部浏览器打开的公网地址；迁移到具备公网端口的服务器后执行同一脚本并在安全组放行端口即可。
+- 生产化：`deploy/campus-event.service` 提供 systemd 托管模板（参考 `deploy/DEPLOY.md`）。
 
 ## 五、配置项（环境变量）
 
