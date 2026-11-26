@@ -17,8 +17,16 @@ class Student(Base):
 
     student_id: Mapped[str] = mapped_column(String(20), primary_key=True)
     name: Mapped[str] = mapped_column(String(60), nullable=False)
+    # v2 / CR-01：年级，取值 1—4（1 大一、2 大二、3 大三、4 大四）
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # v2 / CR-02：模拟邮件收件地址
+    email: Mapped[str] = mapped_column(String(120), nullable=False, default="")
 
     registrations: Mapped[list["Registration"]] = relationship(back_populates="student")
+
+    @property
+    def grade_label(self) -> str:
+        return {1: "大一", 2: "大二", 3: "大三", 4: "大四"}.get(self.grade, f"{self.grade} 年级")
 
     def __repr__(self) -> str:  # pragma: no cover - 调试用
         return f"<Student {self.student_id} {self.name}>"
@@ -34,6 +42,9 @@ class Activity(Base):
     location: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     policy_type: Mapped[str] = mapped_column(String(20), nullable=False, default=PolicyType.DIRECT.value)
+    # v2 / CR-01：年级限定（仅 policy_type=grade_direct 时生效），闭区间，NULL 表示不限
+    min_grade: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+    max_grade: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
 
     registrations: Mapped[list["Registration"]] = relationship(
@@ -86,3 +97,25 @@ class Message(Base):
     event_key: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     is_read: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class EmailRecord(Base):
+    """v2 / CR-02：模拟邮件发送记录（收件人、主题、内容、状态、时间）。
+
+    ``(recipient, event_key)`` 唯一，保证同一业务事件不会重复发送；
+    发送失败也落一条记录并带上错误信息，用于排查。
+    """
+
+    __tablename__ = "email_records"
+    __table_args__ = (UniqueConstraint("recipient", "event_key", name="uq_email_event"),)
+
+    email_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    student_id: Mapped[str] = mapped_column(String(20), nullable=False, default="")
+    activity_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    recipient: Mapped[str] = mapped_column(String(120), nullable=False)
+    subject: Mapped[str] = mapped_column(String(160), nullable=False)
+    body: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="已发送")
+    error: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    event_key: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)

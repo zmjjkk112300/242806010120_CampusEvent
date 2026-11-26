@@ -8,6 +8,12 @@
     <tr><th>开始时间</th><td>{{ activity.start_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
     <tr><th>地点</th><td>{{ activity.location }}</td></tr>
     <tr><th>报名方式</th><td><span class="tag">{{ activity.policy_label }}</span></td></tr>
+    {% if activity.policy_type == 'grade_direct' %}
+    <tr><th>年级限定</th><td>
+      {% set g = {1: '大一', 2: '大二', 3: '大三', 4: '大四'} %}
+      {{ g.get(activity.min_grade, '大一') }}—{{ g.get(activity.max_grade, '大四') }}（仅这两类年级学生可报名）
+    </td></tr>
+    {% endif %}
     <tr><th>人数上限</th><td>{{ stats.capacity }}</td></tr>
     <tr><th>已通过</th><td>{{ stats.approved }}</td></tr>
     <tr><th>待审核</th><td>{{ stats.pending }}</td></tr>

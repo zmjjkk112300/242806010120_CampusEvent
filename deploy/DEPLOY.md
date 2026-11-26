@@ -1,4 +1,4 @@
-# 部署说明（CampusEvent baseline-v1）
+# 部署说明（CampusEvent change-v2）
 
 ## 1. 已完成的部署（阿里云轻量应用服务器）
 
@@ -8,7 +8,7 @@
 | 部署方式 | 解包仓库到 `/opt/campus-event` → `python3 -m venv .venv` → `pip install -r requirements.txt` → 写入 `.env` → systemd 启动 `gunicorn -w 2 -b 0.0.0.0:8000 run:app` |
 | 代码位置 | `/opt/campus-event` |
 | 进程托管 | systemd 单元 `campus-event.service`（`Restart=always`，开机自启） |
-| 验证结果 | 服务器上 `pytest -q` → 23 passed；`curl 127.0.0.1:8000/login` → HTTP 200；外网访问 → HTTP 200 |
+| 验证结果 | 服务器上 `pytest -q` → 36 passed（baseline 23 + v2 变更 13）；`curl 127.0.0.1:8000/login` → HTTP 200；外网访问 → HTTP 200 |
 | 公网地址 | <http://47.106.160.76:8000> |
 | 运行日志 | `journalctl -u campus-event` |
 

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}邮件记录 · CampusEvent{% endblock %}
+{% block content %}
+<h1>模拟邮件记录</h1>
+<p class="meta">CR-02 变更：报名通过、审核通过或拒绝时，站内消息照旧发送，同时由 MockEmailSender 模拟发信；发送失败只记错误，不影响报名结果。</p>
+{% if rows %}
+<table>
+  <tr><th>编号</th><th>收件人</th><th>主题</th><th>状态</th><th>时间</th><th>内容 / 错误</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>#{{ r.email_id }}</td>
+    <td>{{ r.recipient }}</td>
+    <td>{{ r.subject }}</td>
+    <td>
+      <span class="tag{% if r.status == '发送失败' %} tag-warn{% endif %}">{{ r.status }}</span>
+    </td>
+    <td class="meta">{{ r.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+    <td>{{ r.error if r.error else r.body }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="empty">还没有邮件记录</div>
+{% endif %}
+{% endblock %}

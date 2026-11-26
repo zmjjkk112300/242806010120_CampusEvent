@@ -31,6 +31,22 @@
       {% endfor %}
     </select>
   </div>
+  <div class="field">
+    <label>年级限定（仅“年级限定直接报名”生效）</label>
+    <div class="inline">
+      <select name="min_grade">
+        {% for value, text in [(1, '大一'), (2, '大二'), (3, '大三'), (4, '大四')] %}
+        <option value="{{ value }}" {% if activity and activity.min_grade == value %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+      </select>
+      <span>至</span>
+      <select name="max_grade">
+        {% for value, text in [(1, '大一'), (2, '大二'), (3, '大三'), (4, '大四')] %}
+        <option value="{{ value }}" {% if activity and activity.max_grade == value %}selected{% elif not activity and value == 4 %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
   <button type="submit">保存</button>
   <a class="btn ghost" href="{{ url_for('admin.activities') }}">返回</a>
 </form>

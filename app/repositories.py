@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .constants import RegistrationStatus
 from .errors import ActivityNotFound, HasRegistrations
-from .models import Activity, Message, Registration, Student
+from .models import Activity, EmailRecord, Message, Registration, Student
 
 
 class ActivityRepository:
@@ -160,3 +160,22 @@ class MessageRepository:
         for message in messages:
             message.is_read = 1
         self.session.commit()
+
+
+class EmailRepository:
+    """v2 / CR-02：模拟邮件发送记录的只读查询。"""
+
+    def __init__(self, session: Session):
+        self.session = session
+
+    def list_all(self) -> list[EmailRecord]:
+        stmt = select(EmailRecord).order_by(EmailRecord.email_id.desc())
+        return list(self.session.scalars(stmt))
+
+    def list_of_student(self, student_id: str) -> list[EmailRecord]:
+        stmt = (
+            select(EmailRecord)
+            .where(EmailRecord.student_id == student_id)
+            .order_by(EmailRecord.email_id.desc())
+        )
+        return list(self.session.scalars(stmt))

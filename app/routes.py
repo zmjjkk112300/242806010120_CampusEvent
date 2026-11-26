@@ -18,7 +18,13 @@ from . import extensions
 from .constants import PolicyType, RegistrationStatus
 from .errors import DomainError, ValidationError
 from .policies import default_registry
-from .repositories import ActivityRepository, MessageRepository, RegistrationRepository, StudentRepository
+from .repositories import (
+    ActivityRepository,
+    EmailRepository,
+    MessageRepository,
+    RegistrationRepository,
+    StudentRepository,
+)
 from .services import RegistrationService
 
 student_bp = Blueprint("student", __name__)
@@ -211,6 +217,20 @@ def _parse_activity_form(form) -> dict:
         policy_type = PolicyType(raw_policy).value
     except ValueError as exc:
         raise ValidationError("报名方式不合法") from exc
+
+    # v2 / CR-01：仅年级限定活动读取年级区间，其余活动保持“不限”
+    min_grade = max_grade = None
+    if policy_type == PolicyType.GRADE_DIRECT.value:
+        try:
+            min_grade = int(form.get("min_grade", "2") or 2)
+            max_grade = int(form.get("max_grade", "3") or 3)
+        except ValueError as exc:
+            raise ValidationError("年级限定取值不正确") from exc
+        if not (1 <= min_grade <= 4 and 1 <= max_grade <= 4):
+            raise ValidationError("年级限定必须在 1—4 之间")
+        if min_grade > max_grade:
+            raise ValidationError("年级下限不能大于上限")
+
     return {
         "title": title,
         "category": category,
@@ -218,6 +238,8 @@ def _parse_activity_form(form) -> dict:
         "location": location,
         "capacity": capacity,
         "policy_type": policy_type,
+        "min_grade": min_grade,
+        "max_grade": max_grade,
     }
 
 
@@ -318,6 +340,15 @@ def reject(registration_id: int):
     except DomainError as exc:
         flash(exc.message, "error")
     return redirect(url_for("admin.reviews"))
+
+
+# ---------------------------------------------------------------- v2 / CR-02
+@admin_bp.get("/emails")
+@admin_login_required
+def emails():
+    """模拟邮件发送记录：收件人、主题、内容、状态与时间。"""
+    rows = EmailRepository(extensions.session()).list_all()
+    return render_template("admin_emails.html", rows=rows)
 
 
 # ---------------------------------------------------------------- 错误页

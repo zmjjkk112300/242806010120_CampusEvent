@@ -1,0 +1,45 @@
+@startuml SequenceRegisterV2
+skinparam dpi 150
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor 学生
+participant "StudentRoutes" as R
+participant "RegistrationService" as S
+participant "PolicyRegistry" as P
+participant "GradeLimitedDirectPolicy" as G
+participant "GradeRangeRule" as K
+participant "DomainEventBus" as B
+participant "InAppNotificationObserver" as N1
+participant "EmailNotificationObserver" as N2
+database "SQLite" as DB
+
+学生 -> R : POST /activities/{id}/register
+R -> S : register(activity_id, student_id)
+S -> DB : 公共不变量：活动未开始 / 无重复有效报名 / 名额
+S -> P : get(policy_type)
+P --> S : GradeLimitedDirectPolicy
+S -> G : decide(context)
+G -> K : check(context) 年级区间校验
+alt 年级越界
+  K --> G : GradeNotAllowed（含年级与允许区间）
+  G --> S : 异常冒泡（未落库）
+  S --> R : DomainError
+  R --> 学生 : flash 不符合报名条件，不生成报名
+else 年级符合
+  G --> S : RegistrationDecision(APPROVED)
+  S -> DB : 写入 Registration（占用名额）
+  S -> B : publish(EVENT_APPROVED)
+  B -> N1 : handle(event)
+  N1 -> DB : 幂等写入 Message
+  B -> N2 : handle(event)
+  N2 -> DB : EmailRecord 查重(recipient + event_key)
+  N2 -> N2 : MockEmailSender.send()
+  alt 发送失败
+    N2 -> DB : EmailRecord(status=发送失败, error)
+    N2 --> B : raise，总线记录 failure，报名不回滚
+  end
+  S --> R : registration
+  R --> 学生 : flash 报名成功
+end
+@enduml

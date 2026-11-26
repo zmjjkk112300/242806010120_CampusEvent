@@ -48,6 +48,12 @@ class DomainEventBus:
         for name in event_names:
             self.subscribe(name, handler)
 
+    def unsubscribe(self, event_name: str, handler: EventHandler) -> None:
+        """取消订阅（测试与热插拔场景使用）。"""
+        handlers = self._handlers.get(event_name, [])
+        if handler in handlers:
+            handlers.remove(handler)
+
     def publish(self, event: RegistrationEvent) -> list[Exception]:
         """发布事件；处理器异常被吞掉并留痕，保证主流程继续。"""
 

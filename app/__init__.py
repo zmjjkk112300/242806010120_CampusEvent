@@ -4,6 +4,7 @@ import os
 
 from flask import Flask
 
+from .constants import APP_VERSION
 from . import extensions
 from .routes import admin_bp, student_bp
 from .seed import seed_demo_data
@@ -23,17 +24,31 @@ def create_app(config: dict | None = None) -> Flask:
         ADMIN_USER=os.environ.get("CAMPUS_EVENT_ADMIN", "admin"),
         ADMIN_PASSWORD=os.environ.get("CAMPUS_EVENT_ADMIN_PASSWORD", "admin123"),
         SEED_DEMO=os.environ.get("CAMPUS_EVENT_SEED", "1") == "1",
+        EMAIL_FAIL_TIMES=int(os.environ.get("CAMPUS_EVENT_EMAIL_FAIL_TIMES", "0")),
     )
     if config:
         app.config.update(config)
 
     extensions.init_engine(app.config["DATABASE_URI"])
     extensions.create_all()
-    extensions.init_event_bus(logger=app.logger)
+    migrations = extensions.ensure_schema()
+    if migrations:
+        app.logger.info("v2 结构迁移已执行：%s", "，".join(migrations))
+    extensions.init_event_bus(
+        logger=app.logger,
+        email_fail_times=app.config["EMAIL_FAIL_TIMES"],
+    )
 
     @app.context_processor
     def inject_globals():
-        return {"policy_labels": {"direct": "直接报名", "approval": "管理员审核"}}
+        return {
+            "app_version": APP_VERSION,
+            "policy_labels": {
+                "direct": "直接报名",
+                "approval": "管理员审核",
+                "grade_direct": "年级限定直接报名",
+            },
+        }
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):  # noqa: ARG001

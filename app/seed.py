@@ -14,13 +14,15 @@ def seed_demo_data(app) -> None:
     session = extensions.session()
     try:
         if session.scalar(select(Student).limit(1)) is not None:
+            # 已有数据（v1 升级而来）：只补齐 v2 新增的演示要素，不覆盖既有数据
+            ensure_change_demo(session)
             return
 
         now = datetime.now()
         students = [
-            Student(student_id="S001", name="张皓南"),
-            Student(student_id="S002", name="李思远"),
-            Student(student_id="S003", name="王雨桐"),
+            Student(student_id="S001", name="张皓南", grade=3, email="s001@campus.example.edu"),
+            Student(student_id="S002", name="李思远", grade=2, email="s002@campus.example.edu"),
+            Student(student_id="S003", name="王雨桐", grade=1, email="s003@campus.example.edu"),
         ]
         session.add_all(students)
 
@@ -57,6 +59,17 @@ def seed_demo_data(app) -> None:
                 capacity=50,
                 policy_type=PolicyType.DIRECT.value,
             ),
+            # v2 / CR-01：仅大二、大三可报名的年级限定活动
+            Activity(
+                title="学科竞赛集训营（大二大三专属）",
+                category="学术竞赛",
+                start_at=now + timedelta(days=6, hours=9),
+                location="湘湖校区实训楼 B201",
+                capacity=10,
+                policy_type=PolicyType.GRADE_DIRECT.value,
+                min_grade=2,
+                max_grade=3,
+            ),
         ]
         session.add_all(activities)
         session.flush()
@@ -88,3 +101,30 @@ def seed_demo_data(app) -> None:
         session.commit()
     finally:
         extensions.remove_session()
+
+
+def ensure_change_demo(session) -> None:
+    """v2 幂等补齐：老库缺少年级限定演示活动时补一条，便于直接演示 CR-01。
+
+    * 只在不存在 ``grade_direct`` 活动时插入，重复启动不会产生重复数据；
+    * 学生的年级/邮箱由 ``extensions.ensure_schema()`` 负责回填，这里不重复处理。
+    """
+    exists = session.scalar(
+        select(Activity).where(Activity.policy_type == PolicyType.GRADE_DIRECT.value).limit(1)
+    )
+    if exists is not None:
+        return
+    session.add(
+        Activity(
+            title="学科竞赛集训营（大二大三专属）",
+            category="学术竞赛",
+            start_at=datetime.now() + timedelta(days=6, hours=9),
+            location="湘湖校区实训楼 B201",
+            capacity=10,
+            policy_type=PolicyType.GRADE_DIRECT.value,
+            min_grade=2,
+            max_grade=3,
+        )
+    )
+    session.commit()
+    print("已为既有数据库补齐 v2 演示活动：学科竞赛集训营（大二大三专属）")

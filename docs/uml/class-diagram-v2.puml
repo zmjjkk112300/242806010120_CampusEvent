@@ -1,0 +1,242 @@
+@startuml CampusEventClassDiagramV2
+skinparam dpi 150
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #0F6B5C
+  ArrowColor #4B5563
+  HeaderBackgroundColor #EAF4F1
+}
+hide empty members
+
+package "表现层 (Flask Blueprints)" {
+  class StudentRoutes <<Blueprint>> {
+    +login()
+    +activities()
+    +activity_detail()
+    +register()
+    +cancel()
+    +my_registrations()
+    +messages()
+  }
+  class AdminRoutes <<Blueprint>> {
+    +activities()
+    +activity_new()
+    +activity_edit()
+    +activity_delete()
+    +reviews()
+    +approve()
+    +reject()
+    +emails()
+  }
+}
+
+package "应用服务层" {
+  class RegistrationService {
+    -bus: DomainEventBus
+    -registry: PolicyRegistry
+    -activities: ActivityRepository
+    -registrations: RegistrationRepository
+    +register(activity_id, student_id)
+    +cancel(registration_id, student_id)
+    +approve(registration_id)
+    +reject(registration_id)
+    +stats(activity_id): dict
+  }
+}
+
+package "策略 (Strategy)" {
+  interface RegistrationPolicy {
+    +policy_type: PolicyType
+    +occupies_capacity_on_submit: bool
+    +decide(context): RegistrationDecision
+  }
+  class DirectRegistrationPolicy {
+    policy_type = direct
+    occupies_capacity_on_submit = true
+    +decide(context): RegistrationDecision
+  }
+  class ApprovalRegistrationPolicy {
+    policy_type = approval
+    occupies_capacity_on_submit = false
+    +decide(context): RegistrationDecision
+  }
+  class PolicyRegistry {
+    -policies: dict
+    +register(policy)
+    +get(policy_type): RegistrationPolicy
+  }
+  class GradeLimitedDirectPolicy {
+    policy_type = grade_direct
+    occupies_capacity_on_submit = true
+    -inner: DirectRegistrationPolicy
+    -rule: GradeRangeRule
+    +decide(context): RegistrationDecision
+  }
+  interface RegistrationRule {
+    +check(context)
+  }
+  class GradeRangeRule {
+    +check(context)
+  }
+  class CompositePolicy <<v2 组合>> {
+    -rules: list
+    -inner: RegistrationPolicy
+    +decide(context): RegistrationDecision
+  }
+  class RegistrationContext <<value object>> {
+    +activity: Activity
+    +student: Student
+    +approved_count: int
+    +now: datetime
+  }
+  class RegistrationDecision <<value object>> {
+    +status: RegistrationStatus
+    +event_type: str
+  }
+}
+
+package "事件通知 (Observer)" {
+  class DomainEventBus {
+    -handlers: dict
+    -failures: list
+    +subscribe_all(handler, names)
+    +publish(event): list
+  }
+  class RegistrationEvent <<event>> {
+    +name: str
+    +registration_id: int
+    +activity_id: int
+    +student_id: str
+    +status: RegistrationStatus
+    +event_key(): str
+  }
+  class InAppNotificationObserver <<observer>> {
+    -session_factory
+    +handle(event)
+    +build_content(event): str
+  }
+  class EmailNotificationObserver <<observer v2>> {
+    -session_factory
+    -sender: EmailSender
+    +handle(event)
+    +default_recipient(event): str
+  }
+  class EmailSender <<interface v2>> {
+    +send(recipient, subject, body)
+  }
+  class MockEmailSender <<v2 模拟实现>> {
+    -fail_times: int
+    -sent: list
+    +send(recipient, subject, body)
+  }
+}
+
+package "仓储层" {
+  class ActivityRepository {
+    +get(id)
+    +list(keyword)
+    +create(**fields)
+    +update(id, **fields)
+    +delete(id)
+  }
+  class RegistrationRepository {
+    +count_by_status(activity_id, status)
+    +active_of(activity_id, student_id)
+    +list_by_status(status)
+  }
+  class StudentRepository
+  class MessageRepository
+}
+
+package "领域模型 (SQLite / SQLAlchemy)" {
+  class Activity {
+    activity_id: int
+    title: str
+    category: str
+    start_at: datetime
+    location: str
+    capacity: int
+    policy_type: PolicyType
+    min_grade: int
+    max_grade: int
+  }
+  class Student {
+    student_id: str
+    name: str
+    grade: int
+    email: str
+  }
+  class Registration {
+    registration_id: int
+    activity_id: int
+    student_id: str
+    status: RegistrationStatus
+    created_at: datetime
+    updated_at: datetime
+  }
+  class Message {
+    message_id: int
+    student_id: str
+    activity_id: int
+    content: str
+    event_key: str
+    is_read: int
+  }
+  class EmailRecord <<v2>> {
+    email_id: int
+    student_id: str
+    activity_id: int
+    recipient: str
+    subject: str
+    body: str
+    status: str
+    error: str
+    event_key: str
+    created_at: datetime
+  }
+}
+
+StudentRoutes --> RegistrationService : 调用
+AdminRoutes --> RegistrationService : 调用
+AdminRoutes --> ActivityRepository : 增删改活动
+StudentRoutes --> MessageRepository : 读取消息
+
+RegistrationService --> PolicyRegistry : 选择策略
+RegistrationService --> DomainEventBus : 发布事件
+RegistrationService --> RegistrationRepository
+RegistrationService --> ActivityRepository
+PolicyRegistry o--> RegistrationPolicy : 持有
+RegistrationPolicy <|-- DirectRegistrationPolicy
+RegistrationPolicy <|-- ApprovalRegistrationPolicy
+RegistrationPolicy <|-- GradeLimitedDirectPolicy
+RegistrationPolicy <|-- CompositePolicy
+RegistrationPolicy ..> RegistrationDecision : 产生
+RegistrationPolicy ..> RegistrationContext : 读取
+
+DomainEventBus --> InAppNotificationObserver : 通知
+DomainEventBus ..> RegistrationEvent : 分发
+InAppNotificationObserver ..> Message : 写入
+DomainEventBus --> EmailNotificationObserver : 通知（并列观察者）
+EmailNotificationObserver --> EmailSender : 委托发送
+EmailSender <|.. MockEmailSender
+EmailNotificationObserver ..> EmailRecord : 写入
+GradeLimitedDirectPolicy --> GradeRangeRule : 组合规则
+GradeLimitedDirectPolicy --> DirectRegistrationPolicy : 复用内层策略
+GradeRangeRule ..> GradeNotAllowed : 越界抛出
+InAppNotificationObserver ..> RegistrationEvent : 消费
+
+Registration "0..*" --> "1" Activity : 报名于
+Registration "0..*" --> "1" Student : 属于
+Message "0..*" --> "1" Student : 送达
+EmailRecord "0..*" --> "1" Student : 收件
+
+note right of RegistrationService
+  公共不变量在此校验：
+  活动未开始、无重复有效报名、
+  名额不超限（批准时复查）
+  —— v2 未改动本类，年级规则作为策略内规则链接入
+end note
+
+@enduml

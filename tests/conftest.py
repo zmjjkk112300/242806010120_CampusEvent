@@ -27,9 +27,11 @@ def app(tmp_path):
     session = extensions.session()
     session.add_all(
         [
-            Student(student_id="S001", name="张皓南"),
-            Student(student_id="S002", name="李思远"),
-            Student(student_id="S003", name="王雨桐"),
+            # grade：1 大一、2 大二、3 大三、4 大四
+            Student(student_id="S001", name="张皓南", grade=3, email="s001@campus.example.edu"),
+            Student(student_id="S002", name="李思远", grade=2, email="s002@campus.example.edu"),
+            Student(student_id="S003", name="王雨桐", grade=1, email="s003@campus.example.edu"),
+            Student(student_id="S004", name="赵一鸣", grade=4, email="s004@campus.example.edu"),
         ]
     )
     session.commit()
@@ -58,6 +60,8 @@ def make_activity(app):
         start_in_days=3,
         category="文体活动",
         location="学生活动中心",
+        min_grade=None,
+        max_grade=None,
     ):
         activity = Activity(
             title=title,
@@ -66,6 +70,8 @@ def make_activity(app):
             capacity=capacity,
             policy_type=PolicyType(policy_type).value,
             start_at=datetime.now() + timedelta(days=start_in_days),
+            min_grade=min_grade,
+            max_grade=max_grade,
         )
         session = extensions.session()
         session.add(activity)

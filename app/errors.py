@@ -49,3 +49,14 @@ class UnknownPolicy(DomainError):
 
 class ValidationError(DomainError):
     message = "输入内容不合法"
+
+
+# ---------------------------------------------------------------- v2 新增
+class GradeNotAllowed(DomainError):
+    """v2 / CR-01：年级不在活动允许范围内。"""
+
+    message = "你的年级不在该活动的报名范围内"
+
+
+class EmailSendFailed(Exception):
+    """v2 / CR-02：模拟邮件发送失败（只影响邮件渠道，不影响报名结果）。"""
