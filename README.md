@@ -52,6 +52,7 @@ python run.py
 - 邮件只订阅“通过 / 拒绝”两类事件，记录收件人、主题、内容、状态、时间与失败原因，`(recipient, event_key)` 唯一约束保证同一事件只发一次。
 - 管理员端新增「邮件记录」页（`/admin/emails`），可直接看到发送成功/失败明细。
 - 影响分析、设计理由与回归证据见 `docs/09`、`docs/10`、`docs/11`；交付与回滚见 `docs/12`；类图与时序图见 `docs/uml/*-v2.*`。
+- 变更版实验报告：`CampusEvent_实验二实验报告_v2.docx`（在 baseline 报告基础上增补第 7 章与附录 B，由 `scripts/build_report.py --v2` 生成）。
 
 ## 四、自动化测试
 
